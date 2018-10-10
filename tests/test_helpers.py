@@ -5,19 +5,12 @@ import types
 from mock import sentinel, MagicMock
 
 from sceptre.stack_group import StackGroup
-from sceptre.helpers import camel_to_snake_case
 from sceptre.helpers import recurse_into_sub_stack_groups
 from sceptre.helpers import get_name_tuple
 from sceptre.helpers import get_external_stack_name
 
 
 class TestHelpers(object):
-
-    def test_camel_to_snake_case(self):
-        snake_case_string = camel_to_snake_case("Cmd")
-        assert snake_case_string == "cmd"
-        snake_case_string = camel_to_snake_case("ASGScalingProcesses")
-        assert snake_case_string == "asg_scaling_processes"
 
     def test_recurse_into_sub_stack_groups(self):
         stack_group = MagicMock(spec=StackGroup)

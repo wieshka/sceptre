@@ -1,25 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from functools import wraps
-import re
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
 
 from .config.graph import StackDependencyGraph
-
-
-def camel_to_snake_case(string):
-    """
-    Converts a string from camel case to snake case.
-
-    :param string: The string to be converted from camel to snake case.
-    :type string: str
-    :returns: The string, in snake case.
-    :rtype: str
-    """
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', string)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
 def recurse_sub_stack_groups_with_graph(func):
