@@ -80,30 +80,6 @@ def get_name_tuple(name):
     return tuple(name.split("/"))
 
 
-def resolve_stack_name(source_stack_name, destination_stack_path):
-    """
-    Returns a stack's full name.
-
-    A dependency stack's name can be provided as either a full stack name, or
-    as the file base name of a stack from the same stack_group.
-    resolve_stack_name calculates the dependency's stack's full name from this.
-
-    :param source_stack_name: The name of the stack with the parameter to be \
-    resolved.
-    :type source_stack_name: str
-    :param destination_stack_path: The full or short name of the depenency \
-    stack.
-    :type destination_stack_path: str
-    :returns: The stack's full name.
-    :rtype: str
-    """
-    if "/" in destination_stack_path:
-        return destination_stack_path
-    else:
-        source_stack_base_name = source_stack_name.rsplit("/", 1)[0]
-        return "/".join([source_stack_base_name, destination_stack_path])
-
-
 def get_external_stack_name(project_code, stack_name):
     """
     Returns the name given to a stack in CloudFormation.

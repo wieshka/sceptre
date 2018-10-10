@@ -8,7 +8,6 @@ from sceptre.stack_group import StackGroup
 from sceptre.helpers import camel_to_snake_case
 from sceptre.helpers import recurse_into_sub_stack_groups
 from sceptre.helpers import get_name_tuple
-from sceptre.helpers import resolve_stack_name
 from sceptre.helpers import get_external_stack_name
 
 
@@ -64,12 +63,6 @@ class TestHelpers(object):
     def test_get_name_tuple(self):
         result = get_name_tuple("dev/ew1/jump-host")
         assert result == ("dev", "ew1", "jump-host")
-
-    def test_resolve_stack_name(self):
-        result = resolve_stack_name("dev/ew1/subnet", "vpc")
-        assert result == "dev/ew1/vpc"
-        result = resolve_stack_name("dev/ew1/subnet", "prod/ue1/vpc")
-        assert result == "prod/ue1/vpc"
 
     def test_get_external_stack_name(self):
         result = get_external_stack_name("prj", "dev/ew1/jump-host")
