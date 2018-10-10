@@ -6,7 +6,6 @@ from mock import sentinel, MagicMock
 
 from sceptre.stack_group import StackGroup
 from sceptre.helpers import recurse_into_sub_stack_groups
-from sceptre.helpers import get_name_tuple
 from sceptre.helpers import get_external_stack_name
 
 
@@ -52,10 +51,6 @@ class TestHelpers(object):
             "stack_group_2": sentinel.response,
             "stack_group_3": sentinel.response
         }
-
-    def test_get_name_tuple(self):
-        result = get_name_tuple("dev/ew1/jump-host")
-        assert result == ("dev", "ew1", "jump-host")
 
     def test_get_external_stack_name(self):
         result = get_external_stack_name("prj", "dev/ew1/jump-host")

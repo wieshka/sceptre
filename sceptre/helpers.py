@@ -54,18 +54,6 @@ def recurse_into_sub_stack_groups(func, factory=dict):
     return decorated
 
 
-def get_name_tuple(name):
-    """
-    Returns a tuple of the stack name, split on the slashes.
-
-    :param name: The Stack's name.
-    :type name: str
-    :returns: A tuple of the stack's name.
-    :rtype: tuple
-    """
-    return tuple(name.split("/"))
-
-
 def get_external_stack_name(project_code, stack_name):
     """
     Returns the name given to a stack in CloudFormation.
