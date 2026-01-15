@@ -11,6 +11,8 @@ import sceptre.template_handlers.helper as helper
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.template_handlers import TemplateHandler
 
+import json
+
 HANDLER_OPTION_KEY = "http_template_handler"
 HANDLER_RETRIES_OPTION_PARAM = "retries"
 DEFAULT_RETRIES_OPTION = 5
@@ -32,7 +34,7 @@ class Http(TemplateHandler):
     def schema(self):
         return {
             "type": "object",
-            "properties": {"url": {"type": "string"}},
+            "properties": {"url": {"type": "string"}, "sanitize": {"type": "boolean"}},
             "required": ["url"],
         }
 
@@ -78,6 +80,19 @@ class Http(TemplateHandler):
                         template = helper.call_sceptre_handler(
                             f.name, self.sceptre_user_data
                         )
+                        
+            elif (
+               path.suffix in self.standard_template_extensions
+            ):
+                if (
+                    self.arguments.get("sanitize", False)
+                ):
+                    try:
+                        template_as_dict = json.loads(template)
+                        tempalte = json.dumps(template_as_dict)
+                    except Exception as e:
+                        self.logger.debug("Template is not valid json, skipping sanitization")
+                        pass
 
         except Exception as e:
             helper.print_template_traceback(path)

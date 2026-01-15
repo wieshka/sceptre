@@ -147,7 +147,12 @@ def test_hook_writes_to_stderr(stack, capfd):
         Cmd("missing_command", stack).run()
     cap = capfd.readouterr()
     assert cap.out.strip() == ""
-    assert cap.err.strip() == "/bin/sh: 1: missing_command: not found"
+    # Different shells format error messages differently:
+    # Linux/dash: "/bin/sh: 1: missing_command: not found"
+    # macOS/bash: "/bin/sh: missing_command: command not found"
+    assert "missing_command" in cap.err.strip()
+    assert "not found" in cap.err.strip()
+    assert cap.err.strip().startswith("/bin/sh:")
 
 
 def test_default_shell_is_sh(stack, capfd):

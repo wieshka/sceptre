@@ -531,3 +531,146 @@ def wait_for_final_state(context, stack_name):
         attempts += 1
         time.sleep(delay)
     raise Exception("Timeout waiting for stack to reach final state.")
+
+
+# Wildcard pattern support steps
+
+
+@when('the user launches stacks with wildcard pattern "{pattern}"')
+def step_impl(context, pattern):
+    sceptre_context = SceptreContext(
+        command_path=pattern, project_path=context.sceptre_dir
+    )
+    launcher = Launcher(sceptre_context)
+    try:
+        launcher.launch()
+    except Exception as e:
+        context.error = e
+
+
+@when('the user creates stacks with wildcard pattern "{pattern}"')
+def step_impl(context, pattern):
+    sceptre_context = SceptreContext(
+        command_path=pattern, project_path=context.sceptre_dir
+    )
+    sceptre_plan = SceptrePlan(sceptre_context)
+    try:
+        sceptre_plan.create()
+    except Exception as e:
+        context.error = e
+
+
+@when('the user updates stacks with wildcard pattern "{pattern}"')
+def step_impl(context, pattern):
+    sceptre_context = SceptreContext(
+        command_path=pattern, project_path=context.sceptre_dir
+    )
+    sceptre_plan = SceptrePlan(sceptre_context)
+    try:
+        sceptre_plan.update()
+    except Exception as e:
+        context.error = e
+
+
+@when('the user deletes stacks with wildcard pattern "{pattern}"')
+def step_impl(context, pattern):
+    sceptre_context = SceptreContext(
+        command_path=pattern, project_path=context.sceptre_dir, full_scan=True
+    )
+    sceptre_plan = SceptrePlan(sceptre_context)
+    sceptre_plan.resolve(command="delete", reverse=True)
+    try:
+        sceptre_plan.delete()
+    except Exception as e:
+        context.error = e
+
+
+@when('the user creates change-set "{changeset_name}" for wildcard pattern "{pattern}"')
+def step_impl(context, changeset_name, pattern):
+    sceptre_context = SceptreContext(
+        command_path=pattern, project_path=context.sceptre_dir
+    )
+    sceptre_plan = SceptrePlan(sceptre_context)
+    try:
+        sceptre_plan.create_change_set(changeset_name)
+        context.changeset_name = changeset_name
+    except Exception as e:
+        context.error = e
+
+
+@then('an error is raised containing "{message}"')
+def step_impl(context, message):
+    assert hasattr(context, "error"), "No error was raised"
+    assert message in str(context.error), f"Expected '{message}' in error, got: {context.error}"
+
+
+@given('stack config for "{stack_name}" has "{config_line}"')
+def step_impl(context, stack_name, config_line):
+    config_path = os.path.join(context.sceptre_dir, "config", stack_name + ".yaml")
+    
+    # Read existing config
+    if os.path.exists(config_path):
+        with open(config_path) as f:
+            config = yaml.safe_load(f) or {}
+    else:
+        config = {}
+    
+    # Parse the config line (e.g., "ignore: true")
+    key, value = config_line.split(": ", 1)
+    config[key] = yaml.safe_load(value)
+    
+    # Write updated config
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+    with open(config_path, "w") as f:
+        yaml.safe_dump(config, f, default_flow_style=False)
+
+
+@given('stack group config "{config_file}" sets "{config_line}"')
+def step_impl(context, config_file, config_line):
+    config_path = os.path.join(context.sceptre_dir, "config", config_file)
+    
+    # Read existing config
+    if os.path.exists(config_path):
+        with open(config_path) as f:
+            config = yaml.safe_load(f) or {}
+    else:
+        config = {}
+    
+    # Parse the config line
+    key, value = config_line.split(": ", 1)
+    config[key] = yaml.safe_load(value)
+    
+    # Write updated config
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+    with open(config_path, "w") as f:
+        yaml.safe_dump(config, f, default_flow_style=False)
+
+
+@then('change-set "{changeset_name}" exists for stack "{stack_name}"')
+def step_impl(context, changeset_name, stack_name):
+    full_name = get_cloudformation_stack_name(context, stack_name)
+    
+    try:
+        response = retry_boto_call(
+            context.client.describe_change_set,
+            ChangeSetName=changeset_name,
+            StackName=full_name,
+        )
+        assert response["Status"] in ["CREATE_COMPLETE", "CREATE_PENDING"]
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ChangeSetNotFound":
+            raise AssertionError(f"Change-set {changeset_name} not found for stack {stack_name}")
+        raise
+
+
+@then('stack "{stack_name}" has project_code "{project_code}"')
+def step_impl(context, stack_name, project_code):
+    full_name = get_cloudformation_stack_name(context, stack_name)
+    
+    response = retry_boto_call(context.client.describe_stacks, StackName=full_name)
+    stack_tags = {tag["Key"]: tag["Value"] for tag in response["Stacks"][0].get("Tags", [])}
+    
+    assert "sceptre-project-code" in stack_tags, f"Stack {stack_name} missing project_code tag"
+    assert stack_tags["sceptre-project-code"] == project_code, \
+        f"Expected project_code {project_code}, got {stack_tags['sceptre-project-code']}"
+

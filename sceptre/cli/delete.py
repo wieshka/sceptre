@@ -1,9 +1,14 @@
 import click
 
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import catch_exceptions
-from sceptre.cli.helpers import confirmation
-from sceptre.cli.helpers import stack_status_exit_code
+from sceptre.cli.helpers import (
+    catch_exceptions,
+    confirmation,
+    stack_status_exit_code,
+    has_wildcard,
+    expand_wildcard_to_command_path,
+    print_wildcard_matched_stacks,
+)
 from sceptre.plan.plan import SceptrePlan
 
 from colorama import Fore, Style
@@ -19,6 +24,9 @@ def delete_command(ctx, path, change_set_name, yes):
     """
     Deletes a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     deletes a change set for stack in PATH.
+    
+    Supports wildcard patterns (e.g., 'dev/*.yaml', '**/vpc.yaml') to match multiple stacks.
+    When wildcards are used, confirmation is always required regardless of --yes flag.
     \f
 
     :param path: Path to execute command on.
@@ -28,6 +36,24 @@ def delete_command(ctx, path, change_set_name, yes):
     :param yes: Flag to answer yes to all CLI questions.
     :type yes: bool
     """
+    # Track if wildcards were used to force confirmation
+    used_wildcard = has_wildcard(path)
+    
+    # Handle wildcard expansion
+    if used_wildcard:
+        project_path = ctx.obj.get("project_path")
+        config_path = "config"  # Default config path
+        command_path, matched_files = expand_wildcard_to_command_path(
+            project_path, config_path, path
+        )
+
+        if command_path is None:
+            click.echo(f"No stacks matched pattern '{path}'")
+            exit(1)
+
+        print_wildcard_matched_stacks(matched_files, path)
+        path = command_path
+
     context = SceptreContext(
         command_path=path,
         command_params=ctx.params,
@@ -53,6 +79,10 @@ def delete_command(ctx, path, change_set_name, yes):
         dependencies += "{}{}{}\n".format(Fore.YELLOW, stack.name, Style.RESET_ALL)
 
     print(delete_msg + "{}".format(dependencies))
+
+    # Force confirmation if wildcards were used (override --yes flag)
+    if used_wildcard:
+        yes = False
 
     confirmation(
         plan.delete.__name__, yes, change_set=change_set_name, command_path=path

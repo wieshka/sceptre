@@ -5,7 +5,14 @@ import click
 from click import Context
 from colorama import Fore, Style
 
-from sceptre.cli.helpers import catch_exceptions, confirmation, stack_status_exit_code
+from sceptre.cli.helpers import (
+    catch_exceptions,
+    confirmation,
+    stack_status_exit_code,
+    has_wildcard,
+    expand_wildcard_to_command_path,
+    print_wildcard_matched_stacks,
+)
 from sceptre.cli.prune import Pruner
 from sceptre.context import SceptreContext
 from sceptre.exceptions import DependencyDoesNotExistError
@@ -45,7 +52,23 @@ def launch_command(
     * If any stacks are marked with "obsolete: True", those stacks will neither be created nor updated.
     * Furthermore, if the "-p"/"--prune" flag is used, these stacks will be deleted prior to any
       other launch commands
+    * Supports wildcard patterns (e.g., 'dev/*.yaml', '**/vpc.yaml') to match multiple stacks
     """
+    # Handle wildcard expansion
+    if has_wildcard(path):
+        project_path = ctx.obj.get("project_path")
+        config_path = "config"  # Default config path
+        command_path, matched_files = expand_wildcard_to_command_path(
+            project_path, config_path, path
+        )
+
+        if command_path is None:
+            click.echo(f"No stacks matched pattern '{path}'")
+            exit(1)
+
+        print_wildcard_matched_stacks(matched_files, path)
+        path = command_path
+
     context = SceptreContext(
         command_path=path,
         command_params=ctx.params,

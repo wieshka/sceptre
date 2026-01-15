@@ -1,10 +1,12 @@
 import logging
 import sys
+import glob
+import os
 
 from itertools import cycle
 from functools import partial, wraps
 
-from typing import Any, Optional
+from typing import Any, Optional, Tuple, List
 from pathlib import Path
 
 import json
@@ -20,6 +22,7 @@ from sceptre.helpers import logging_level
 from sceptre.exceptions import SceptreException
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status_colourer import StackStatusColourer
+from colorama import Fore, Style
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +70,105 @@ def confirmation(command, ignore, command_path, change_set=None):
         else:
             msg = msg + "'{0}'".format(command_path)
         click.confirm(msg, abort=True)
+
+
+def has_wildcard(path: str) -> bool:
+    """
+    Checks if a path contains wildcard characters.
+
+    :param path: The path to check for wildcards
+    :type path: str
+    :returns: True if path contains * or ? characters
+    :rtype: bool
+    """
+    return '*' in path or '?' in path
+
+
+def expand_wildcard_to_command_path(
+    project_path: str, config_path: str, pattern: str
+) -> Tuple[Optional[str], List[str]]:
+    """
+    Expands a wildcard pattern to a command path and list of matched stack files.
+
+    Uses glob to find all matching files, filters out config.yaml files,
+    and determines the common parent directory to use as the command_path.
+
+    :param project_path: The absolute path to the project root
+    :type project_path: str
+    :param config_path: The config directory name (e.g., 'config')
+    :type config_path: str
+    :param pattern: The wildcard pattern relative to config_path
+    :type pattern: str
+    :returns: Tuple of (command_path, matched_files) where command_path is
+              relative to config_path or None if no matches, and matched_files
+              is a list of matched stack paths relative to config_path
+    :rtype: Tuple[Optional[str], List[str]]
+    """
+    # Build full pattern path
+    full_config_path = os.path.join(project_path, config_path)
+    full_pattern = os.path.join(full_config_path, pattern)
+
+    # Use glob to find all matching files
+    matched_absolute = glob.glob(full_pattern, recursive=True)
+
+    # Filter out directories and config.yaml files
+    matched_files = []
+    for match in matched_absolute:
+        if os.path.isfile(match):
+            basename = os.path.basename(match)
+            # Exclude files that start with 'config.'
+            if not basename.startswith('config.'):
+                # Convert to relative path from config directory
+                rel_path = os.path.relpath(match, full_config_path)
+                matched_files.append(rel_path)
+
+    # If no matches found, return None
+    if not matched_files:
+        return None, []
+
+    # Determine the common parent directory
+    if len(matched_files) == 1:
+        # Single match - use its parent directory
+        command_path = os.path.dirname(matched_files[0])
+        # If empty (file at root), use '.'
+        if not command_path:
+            command_path = '.'
+    else:
+        # Multiple matches - find common parent
+        absolute_paths = [
+            os.path.join(full_config_path, f) for f in matched_files
+        ]
+        common_parent = os.path.commonpath(absolute_paths)
+        command_path = os.path.relpath(common_parent, full_config_path)
+
+    # Normalize the command_path
+    # If it's the config directory itself, use '.'
+    if command_path == '.':
+        return '.', matched_files
+
+    return command_path, matched_files
+
+
+def print_wildcard_matched_stacks(matched_files: List[str], pattern: str) -> None:
+    """
+    Prints a list of stacks matched by a wildcard pattern.
+
+    Follows the same formatting as Launcher._print_stacks_with_message,
+    displaying matched stack paths in yellow.
+
+    :param matched_files: List of stack file paths that matched the pattern
+    :type matched_files: List[str]
+    :param pattern: The wildcard pattern that was used
+    :type pattern: str
+    """
+    if not matched_files:
+        return
+
+    message = f"* Wildcard pattern '{pattern}' matched the following stacks:\n"
+    for stack_path in matched_files:
+        message += f"{Fore.YELLOW}{stack_path}{Style.RESET_ALL}\n"
+
+    click.echo(message)
 
 
 def write(

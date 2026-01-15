@@ -4,9 +4,16 @@ import click
 
 from typing import Optional
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import catch_exceptions, confirmation
-from sceptre.cli.helpers import write, stack_status_exit_code
-from sceptre.cli.helpers import simplify_change_set_description
+from sceptre.cli.helpers import (
+    catch_exceptions,
+    confirmation,
+    write,
+    stack_status_exit_code,
+    simplify_change_set_description,
+    has_wildcard,
+    expand_wildcard_to_command_path,
+    print_wildcard_matched_stacks,
+)
 from sceptre.stack_status import StackChangeSetStatus
 from sceptre.plan.plan import SceptrePlan
 
@@ -31,6 +38,8 @@ def update_command(
     """
     Updates a stack for a given config PATH. Or perform an update via
     change-set when the change-set flag is set.
+    
+    Supports wildcard patterns (e.g., 'dev/*.yaml', '**/vpc.yaml') to match multiple stacks.
     \f
 
     :param path: Path to execute the command on.
@@ -42,6 +51,20 @@ def update_command(
     :param yes: A flag to answer 'yes' to all CLI questions.
     :type yes: bool
     """
+    # Handle wildcard expansion
+    if has_wildcard(path):
+        project_path = ctx.obj.get("project_path")
+        config_path = "config"  # Default config path
+        command_path, matched_files = expand_wildcard_to_command_path(
+            project_path, config_path, path
+        )
+
+        if command_path is None:
+            click.echo(f"No stacks matched pattern '{path}'")
+            exit(1)
+
+        print_wildcard_matched_stacks(matched_files, path)
+        path = command_path
 
     context = SceptreContext(
         command_path=path,
