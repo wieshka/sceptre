@@ -33,6 +33,12 @@ The directory which stores the top level config directory.
                         ├── config.yaml
                         └── vpc.yaml
 
+   **Wildcard Patterns** Command paths for mutating commands (``launch``,
+   ``create``, ``update``, ``delete``) support wildcard patterns. For example,
+   ``dev/*.yaml`` matches all stacks in the dev directory, and ``**/vpc.yaml``
+   matches all vpc.yaml stacks across all directories. See :ref:`wildcard-support`
+   for more details.
+
 Sceptre Context
 ---------------
 

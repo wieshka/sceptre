@@ -188,6 +188,19 @@ Delete the stack:
 
    $ sceptre delete dev/vpc.yaml
 
+Using Wildcards
+~~~~~~~~~~~~~~~
+
+For mutating commands, you can use wildcard patterns to operate on multiple
+stacks at once. For example:
+
+.. code-block:: text
+
+   $ sceptre launch dev/*.yaml
+
+This will launch all stacks in the dev directory. See :ref:`wildcard-support`
+for more information about wildcard patterns.
+
 Next Steps
 ----------
 

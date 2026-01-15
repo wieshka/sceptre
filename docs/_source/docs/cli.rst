@@ -34,6 +34,94 @@ environment variable:
    env | grep SCEPTRE
    SCEPTRE_<output_name>=<output_value>
 
+.. _wildcard-support:
+
+Wildcard Support
+----------------
+
+Sceptre supports wildcard patterns in command paths for mutating commands such
+as ``launch``, ``create``, ``update``, and ``delete``. This allows you to
+operate on multiple stacks that match a specific pattern.
+
+Wildcard Patterns
+~~~~~~~~~~~~~~~~~
+
+Sceptre supports standard glob-style wildcard patterns:
+
+- ``*`` matches any sequence of characters in a single directory level
+- ``?`` matches any single character
+- ``**`` matches directories recursively
+
+Examples
+~~~~~~~~
+
+Launch all stacks in the dev environment:
+
+.. code-block:: text
+
+   $ sceptre launch dev/*.yaml
+
+Create all VPC stacks across all environments:
+
+.. code-block:: text
+
+   $ sceptre create **/vpc.yaml
+
+Update all stacks whose names start with "app":
+
+.. code-block:: text
+
+   $ sceptre update prod/app*.yaml
+
+Delete all stacks in a specific directory and subdirectories:
+
+.. code-block:: text
+
+   $ sceptre delete dev/**/*.yaml
+
+Pattern Matching Behavior
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When using wildcards, Sceptre will:
+
+1. Expand the pattern to match all Stack config files (files ending in ``.yaml``
+   or ``.json`` that are not named ``config.yaml`` or ``config.json``)
+2. Display a list of matched stacks before executing the command
+3. Respect the dependency graph between matched stacks
+4. Preserve config inheritance from parent ``config.yaml`` files
+
+For example, given this directory structure:
+
+.. code-block:: text
+
+   config/
+   ├── dev/
+   │   ├── config.yaml
+   │   ├── vpc.yaml
+   │   └── app.yaml
+   └── prod/
+       ├── config.yaml
+       ├── vpc.yaml
+       └── app.yaml
+
+The pattern ``**/vpc.yaml`` will match both ``dev/vpc.yaml`` and ``prod/vpc.yaml``,
+and each will inherit configuration from their respective ``config.yaml`` files.
+
+Safety Features
+~~~~~~~~~~~~~~~
+
+Delete commands with wildcards always require explicit confirmation, even when
+the ``--yes`` flag is provided. This prevents accidental deletion of multiple
+stacks.
+
+.. code-block:: text
+
+   $ sceptre delete --yes dev/*.yaml
+   # Will still prompt for confirmation due to wildcard usage
+
+If a wildcard pattern matches no stacks, Sceptre will display an error message
+and exit without performing any operations.
+
 Variable Handling
 -----------------
 
