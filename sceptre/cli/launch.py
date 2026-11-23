@@ -61,7 +61,9 @@ def launch_command(
     """
     # Process path using registered plugins (e.g., wildcard expansion)
     project_path = ctx.obj.get("project_path")
-    path, force_confirm, _ = process_path(path, project_path, "config", "launch")
+    path, force_confirm, matched_files = process_path(
+        path, project_path, "config", "launch"
+    )
 
     # If plugin forces confirmation, override --yes flag
     if force_confirm:
@@ -75,6 +77,7 @@ def launch_command(
         options=ctx.obj.get("options"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies"),
         max_concurrency=max_concurrency,
+        command_stack_paths=matched_files,
     )
     launcher = Launcher(context)
     launcher.print_operations(prune)

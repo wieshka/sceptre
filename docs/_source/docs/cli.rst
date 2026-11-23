@@ -161,6 +161,13 @@ and registers a function returning that class under the
    [project.entry-points."sceptre.cli.path_processors"]
    wildcard = "my_package:register_plugin"
 
+``processed_path`` is the stack or StackGroup path the command runs against.
+``matched_files`` is an optional list of stack config paths relative to the
+``config`` directory (for example ``dev/vpc.yaml``); when given, the command
+only acts on those stacks under ``processed_path`` (dependencies are still
+resolved as usual). Return ``None`` to act on every stack under
+``processed_path``.
+
 The first registered processor whose ``can_process`` returns ``True`` handles
 the path. If it returns ``force_confirm=True``, Sceptre asks for confirmation
 even when ``--yes`` was passed. Plugins that fail to load or raise errors are

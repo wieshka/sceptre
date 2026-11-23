@@ -49,6 +49,12 @@ class SceptreContext(object):
     :param max_concurrency: Specify maximum number of stacks to launch concurrently\
             Integer value with max number of concurrent stacks, or None for no limit
     :type max_concurrency: Optional[int]
+
+    :param command_stack_paths: Optional list of stack config paths, relative\
+            to the config directory, that restricts which stacks under\
+            command_path the command acts on (e.g. set by a path processor\
+            plugin). None means all stacks under command_path.
+    :type command_stack_paths: Optional[List[str]]
     """
 
     def __init__(
@@ -63,6 +69,7 @@ class SceptreContext(object):
         ignore_dependencies=False,
         full_scan=False,
         max_concurrency=None,
+        command_stack_paths=None,
     ):
         # project_path: absolute path to the base sceptre project folder
         # e.g. absolute_path/to/sceptre_directory
@@ -100,6 +107,14 @@ class SceptreContext(object):
         self.full_scan = full_scan if full_scan is True else False
 
         self.max_concurrency = max_concurrency
+
+        # Optional subset of stacks under command_path to act on
+        # e.g. ["dev/vpc-1.yaml", "dev/vpc-2.yaml"]
+        self.command_stack_paths = (
+            None
+            if command_stack_paths is None
+            else {path.normpath(p) for p in command_stack_paths}
+        )
 
     def full_config_path(self):
         """

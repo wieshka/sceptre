@@ -406,6 +406,40 @@ class TestConfigReader(object):
         assert {str(stack) for stack in all_stacks} == expected_stacks
         assert {str(stack) for stack in command_stacks} == expected_command_stacks
 
+    @pytest.mark.parametrize(
+        "command_path,command_stack_paths,full_scan,expected_command_stacks",
+        [
+            ("A", ["A/1.yaml", "A/3.yaml"], False, {"A/1", "A/3"}),
+            ("A", ["A/1.yaml"], True, {"A/1"}),
+            ("", ["A/2.yaml", "B/1.yaml"], False, {"A/2", "B/1"}),
+            ("A", ["B/1.yaml"], False, set()),
+            ("A", [], False, set()),
+            ("A", None, False, {"A/1", "A/2", "A/3"}),
+        ],
+    )
+    def test_construct_stacks_with_command_stack_paths(
+        self, command_path, command_stack_paths, full_scan, expected_command_stacks
+    ):
+        project_path, config_dir = self.create_project()
+        for rel_path in ["A/1.yaml", "A/2.yaml", "A/3.yaml", "B/1.yaml"]:
+            self.write_config(
+                os.path.join(config_dir, rel_path),
+                {
+                    "region": "region",
+                    "project_code": "project_code",
+                    "template": {"path": rel_path},
+                },
+            )
+
+        context = SceptreContext(
+            project_path=project_path,
+            command_path=command_path,
+            full_scan=full_scan,
+            command_stack_paths=command_stack_paths,
+        )
+        _, command_stacks = ConfigReader(context).construct_stacks()
+        assert {str(stack) for stack in command_stacks} == expected_command_stacks
+
     def test_construct_stacks_with_disable_rollback_command_param(self):
         project_path, config_dir = self.create_project()
 

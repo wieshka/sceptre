@@ -106,7 +106,7 @@ class TestProcessPath:
 
 
 class TestCliIntegration:
-    def test_force_confirm_overrides_yes_flag(self):
+    def test_plugin_result_is_applied_to_delete(self):
         ctx_obj = {
             "project_path": "/project",
             "user_variables": {},
@@ -114,8 +114,11 @@ class TestCliIntegration:
             "ignore_dependencies": False,
         }
         with patch(
-            "sceptre.cli.delete.process_path", return_value=("dev", True, None)
-        ) as mock_process_path, patch("sceptre.cli.delete.SceptreContext"), patch(
+            "sceptre.cli.delete.process_path",
+            return_value=("dev", True, ["dev/a.yaml"]),
+        ) as mock_process_path, patch(
+            "sceptre.cli.delete.SceptreContext"
+        ) as mock_context, patch(
             "sceptre.cli.delete.SceptrePlan"
         ) as mock_plan, patch(
             "sceptre.cli.delete.confirmation"
@@ -127,3 +130,5 @@ class TestCliIntegration:
             "dev/*.yaml", "/project", "config", "delete"
         )
         assert mock_confirmation.call_args.args[1] is False
+        assert mock_context.call_args.kwargs["command_path"] == "dev"
+        assert mock_context.call_args.kwargs["command_stack_paths"] == ["dev/a.yaml"]

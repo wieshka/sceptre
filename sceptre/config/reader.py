@@ -289,8 +289,12 @@ class ConfigReader(object):
             stack_map[sceptreise_path(rel_path)] = stack
 
             full_command_path = self.context.full_command_path()
-            if abs_path == full_command_path or abs_path.startswith(
-                full_command_path.rstrip(path.sep) + path.sep
+            if (
+                abs_path == full_command_path
+                or abs_path.startswith(full_command_path.rstrip(path.sep) + path.sep)
+            ) and (
+                self.context.command_stack_paths is None
+                or path.normpath(rel_path) in self.context.command_stack_paths
             ):
                 command_stacks.add(stack)
 

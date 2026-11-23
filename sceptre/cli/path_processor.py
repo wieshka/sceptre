@@ -56,7 +56,10 @@ class PathProcessor:
         :return: Tuple of (processed_path, force_confirm, matched_files)
             - processed_path: The transformed path
             - force_confirm: Whether to force confirmation dialogs
-            - matched_files: List of matched files (for display), or None
+            - matched_files: Stack config paths relative to the config
+              directory (e.g. ``dev/vpc.yaml``). When given, the command acts
+              only on these stacks (plus their dependencies) under
+              processed_path. None means every stack under processed_path.
         """
         raise NotImplementedError("Subclasses must implement process()")
 
@@ -122,7 +125,8 @@ def process_path(
     :return: Tuple of (processed_path, force_confirm, matched_files)
         - processed_path: The transformed path or original if no processor matched
         - force_confirm: Whether to force confirmation (False if no processor)
-        - matched_files: List of matched files or None if no processor
+        - matched_files: Stacks to restrict the command to, or None for all
+          stacks under processed_path (always None if no processor matched)
     """
     processors = get_registered_processors()
 

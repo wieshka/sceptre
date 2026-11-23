@@ -33,7 +33,9 @@ def delete_command(ctx, path, change_set_name, yes):
     """
     # Process path using registered plugins (e.g., wildcard expansion)
     project_path = ctx.obj.get("project_path")
-    path, force_confirm, _ = process_path(path, project_path, "config", "delete")
+    path, force_confirm, matched_files = process_path(
+        path, project_path, "config", "delete"
+    )
 
     # If plugin forces confirmation, override --yes flag
     if force_confirm:
@@ -47,6 +49,7 @@ def delete_command(ctx, path, change_set_name, yes):
         options=ctx.obj.get("options"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies"),
         full_scan=True,
+        command_stack_paths=matched_files,
     )
 
     plan = SceptrePlan(context)
