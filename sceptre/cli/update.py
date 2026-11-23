@@ -4,13 +4,9 @@ import click
 
 from typing import Optional
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import (
-    catch_exceptions,
-    confirmation,
-    write,
-    stack_status_exit_code,
-    simplify_change_set_description,
-)
+from sceptre.cli.helpers import catch_exceptions, confirmation
+from sceptre.cli.helpers import write, stack_status_exit_code
+from sceptre.cli.helpers import simplify_change_set_description
 from sceptre.cli.path_processor import process_path
 from sceptre.stack_status import StackChangeSetStatus
 from sceptre.plan.plan import SceptrePlan
@@ -64,9 +60,11 @@ def update_command(
     """
     # Process path using registered plugins (e.g., wildcard expansion)
     project_path = ctx.obj.get("project_path")
-    path, force_confirm, matched_files = process_path(
-        path, project_path, "config", "update"
-    )
+    path, force_confirm, _ = process_path(path, project_path, "config", "update")
+
+    # If plugin forces confirmation, override --yes flag
+    if force_confirm:
+        yes = False
 
     context = SceptreContext(
         command_path=path,

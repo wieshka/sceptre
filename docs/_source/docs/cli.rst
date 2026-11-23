@@ -126,6 +126,46 @@ The ``--max-concurrency`` option is available for the following commands:
 .. note::
    The concurrency limit applies within each dependency batch. Sceptre will still respect stack dependencies and process stacks in the correct order, but will limit the number of concurrent operations within each batch of independent stacks.
 
+Path Processor Plugins
+----------------------
+
+The ``create``, ``update``, ``launch`` and ``delete`` commands pass their
+``PATH`` argument through any installed *path processor* plugins before
+resolving stacks. This lets external packages add features such as
+wildcard/glob expansion (for example `sceptre-wildcard-plugin
+<https://github.com/wieshka/sceptre-wildcard-plugin>`_) without changes to
+Sceptre itself. If no plugin claims the path, it is used unchanged.
+
+A plugin subclasses ``sceptre.cli.path_processor.PathProcessor``:
+
+.. code-block:: python
+
+   from sceptre.cli.path_processor import PathProcessor
+
+   class WildcardProcessor(PathProcessor):
+       def can_process(self, path):
+           return "*" in path
+
+       def process(self, path, project_path, search_dir, command):
+           # Return (processed_path, force_confirm, matched_files)
+           ...
+
+   def register_plugin():
+       return WildcardProcessor
+
+and registers a function returning that class under the
+``sceptre.cli.path_processors`` entry point group:
+
+.. code-block:: toml
+
+   [project.entry-points."sceptre.cli.path_processors"]
+   wildcard = "my_package:register_plugin"
+
+The first registered processor whose ``can_process`` returns ``True`` handles
+the path. If it returns ``force_confirm=True``, Sceptre asks for confirmation
+even when ``--yes`` was passed. Plugins that fail to load or raise errors are
+logged as warnings and skipped.
+
 Command reference
 -----------------
 

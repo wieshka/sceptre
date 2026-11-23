@@ -5,11 +5,7 @@ import click
 from click import Context
 from colorama import Fore, Style
 
-from sceptre.cli.helpers import (
-    catch_exceptions,
-    confirmation,
-    stack_status_exit_code,
-)
+from sceptre.cli.helpers import catch_exceptions, confirmation, stack_status_exit_code
 from sceptre.cli.path_processor import process_path
 from sceptre.cli.prune import Pruner
 from sceptre.context import SceptreContext
@@ -65,9 +61,11 @@ def launch_command(
     """
     # Process path using registered plugins (e.g., wildcard expansion)
     project_path = ctx.obj.get("project_path")
-    path, force_confirm, matched_files = process_path(
-        path, project_path, "config", "launch"
-    )
+    path, force_confirm, _ = process_path(path, project_path, "config", "launch")
+
+    # If plugin forces confirmation, override --yes flag
+    if force_confirm:
+        yes = False
 
     context = SceptreContext(
         command_path=path,

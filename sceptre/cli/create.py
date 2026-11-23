@@ -2,11 +2,7 @@ import click
 
 from typing import Optional
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import (
-    catch_exceptions,
-    confirmation,
-    stack_status_exit_code,
-)
+from sceptre.cli.helpers import catch_exceptions, confirmation
 from sceptre.cli.path_processor import process_path
 from sceptre.plan.plan import SceptrePlan
 from sceptre.cli.helpers import stack_status_exit_code
@@ -54,9 +50,11 @@ def create_command(
     """
     # Process path using registered plugins (e.g., wildcard expansion)
     project_path = ctx.obj.get("project_path")
-    path, force_confirm, matched_files = process_path(
-        path, project_path, "config", "create"
-    )
+    path, force_confirm, _ = process_path(path, project_path, "config", "create")
+
+    # If plugin forces confirmation, override --yes flag
+    if force_confirm:
+        yes = False
 
     context = SceptreContext(
         command_path=path,
