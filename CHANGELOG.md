@@ -1,8 +1,10 @@
 # CHANGELOG
 
-Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
-
-## Unreleased
+## 4.7.0 (2026.05.22)
+- [Resolve #1466 ] Extend STS session expiry for long running deployments (#1587)
+- [Resolves #1568] Adding concurrency options to throttle deployments (#1560)
+- [Resolve #1562] Fix safe loads path (#1563)
+- [Resolve #1482] Make shell optional in cmd hook (#1554)
 
 ## 4.6.0 (2025.12.09)
 - [Resolves #1568] Adding concurrency options to throttle deployments (#1560)
